@@ -1,0 +1,50 @@
+#define BLYNK_TEMPLATE_ID "TMPLnjIUuuzO"
+#define BLYNK_TEMPLATE_NAME "Agricultural"
+#define BLYNK_AUTH_TOKEN "3QR2X46iE2M0g8KBn-oiGKUHbMkQC3fs"
+#define BLYNK_PRINT Serial
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <DHT.h>
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "abcdef";
+char pass[] = "Bibek27@";
+#define DHT11PIN 16
+BlynkTimer timer;
+DHT dht(DHT11PIN, DHT11);
+float _moisture,sensor_analog;
+const int sensor_pin = 33; 
+
+void DHT11sensor() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  Blynk.virtualWrite(V0, t);
+  Blynk.virtualWrite(V1, h);
+}
+void soilMoistureSensor() {
+sensor_analog = analogRead(sensor_pin);
+  _moisture = ( 100 - ( (sensor_analog/4095.00) * 100 ) );
+  Blynk.virtualWrite(V3, _moisture);
+  Serial.print(_moisture);
+}
+BLYNK_WRITE(V12){
+   int value = param.asInt();
+   value ? digitalWrite(4, HIGH) : digitalWrite(4, LOW);
+}
+void setup(){
+  pinMode(4, OUTPUT);
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+  dht.begin();
+  timer.setInterval(100L, soilMoistureSensor);
+ timer.setInterval(100L, DHT11sensor);
+}
+void loop(){
+  sensor_analog = analogRead(sensor_pin);
+  _moisture = ( 100 - ( (sensor_analog/4095) * 100 ) );
+  Blynk.virtualWrite(V3, _moisture);
+  Serial.print(_moisture);
+  delay(1000);  
+  Blynk.run();
+  timer.run();
+}
